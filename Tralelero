@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainrot Battle Royale</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #222;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #ff69b4;
+            text-align: center;
+            margin-bottom: 5px; /* Reduced margin for link */
+            text-shadow: 0 0 5px #ff69b4, 0 0 10px #ff69b4;
+        }
+
+        #wiki-link-container {
+            text-align: center;
+            margin-bottom: 15px; /* Space before tournament status */
+            font-size: 0.9em;
+        }
+        #wiki-link-container a {
+            color: #7599ff;
+            text-decoration: none;
+        }
+        #wiki-link-container a:hover {
+            text-decoration: underline;
+        }
+
+        #tournament-status {
+            display: flex;
+            justify-content: space-around;
+            width: 80%;
+            max-width: 600px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        #alive-counter {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        #current-round {
+            color: #ffff00;
+            font-weight: bold;
+        }
+
+        #controls {
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .control-button {
+            padding: 10px 18px;
+            font-size: 0.9em; /* Adjusted for more buttons */
+            background-color: #8a2be2;
+            color: white;
+            border: 2px solid #4b0082;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 0 8px #8a2be2;
+            margin: 5px 0;
+        }
+
+        .control-button:hover:not(:disabled) {
+            background-color: #9932cc;
+        }
+
+        .control-button:disabled {
+            background-color: #666;
+            color: #aaa;
+            cursor: not-allowed;
+            box-shadow: none;
+            border-color: #444;
+        }
+        
+        #finishButton {
+            background-color: #dc3545;
+            border-color: #a71d2a;
+            box-shadow: 0 0 8px #dc3545;
+        }
+        #finishButton:hover:not(:disabled) {
+            background-color: #c82333;
+        }
+        #restartButton { /* This is now also the Start button */
+            background-color: #17a2b8; /* Teal for restart */
+            border-color: #10707f;
+            box-shadow: 0 0 8px #17a2b8;
+        }
+        #restartButton:hover:not(:disabled) {
+            background-color: #138496;
+        }
+
+        #winner-announcement {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00ffff;
+            margin-top: 20px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #333;
+            border: 1px solid #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+        }
+        
+        .container {
+            display: flex;
+            width: 95%;
+            max-width: 1500px; 
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        #participants-container {
+            flex: 3; 
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); 
+            gap: 15px;
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .participant {
+            border: 1px solid #555;
+            padding: 12px;
+            border-radius: 5px;
+            background-color: #444;
+            transition: background-color 0.3s, opacity 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+        }
+
+        .participant.eliminated {
+            background-color: #2a2a2a;
+            opacity: 0.5;
+        }
+        .participant.eliminated .participant-name,
+        .participant.eliminated .participant-details {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .participant-name {
+            font-weight: bold;
+            color: #ff8c00;
+            margin-bottom: 5px;
+            word-wrap: break-word; 
+            font-size: 0.95em;
+        }
+
+        .participant-details {
+            font-size: 0.8em;
+            color: #ccc;
+            margin-top: 3px;
+            word-wrap: break-word;
+        }
+        .participant-details .detail-label {
+            font-weight: 600;
+            color: #aaa;
+        }
+        .weapon-name, .ability-name {
+            font-style: italic;
+            color: #00ced1;
+        }
+
+        .hp-bar-container {
+            width: 100%;
+            background-color: #555;
+            border-radius: 3px;
+            height: 15px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .hp-bar {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 100%;
+            text-align: center;
+            color: #111; 
+            font-size: 0.8em;
+            font-weight: bold;
+            line-height: 15px; 
+            transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+        }
+
+        .hp-bar.low { background-color: #f1c40f; }
+        .hp-bar.critical { background-color: #e74c3c; }
+
+        #log-container {
+            flex: 2; 
+            background-color: #1e1e1e;
+            color: #d0d0d0;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            height: 70vh; 
+            overflow-y: auto;
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px dashed #444;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-entry.system {
+            color: #7f00ff; 
+            font-style: italic;
+        }
+        .log-entry.round-start {
+            color: #ffff00; 
+            font-weight: bold;
+            text-align: center;
+            margin: 5px 0;
+            border-top: 1px solid #ffff00;
+            border-bottom: 1px solid #ffff00;
+            background-color: rgba(255, 255, 0, 0.1);
+        }
+        .log-entry.elimination {
+            color: #ff4500; 
+            font-weight: bold;
+        }
+        .log-entry.critical-hit { 
+            color: #ffd700; /* Gold for critical hits (even if damage is lower) */
+        }
+        .log-entry.block {
+            color: #87CEEB; /* Sky blue for block */
+            font-style: italic;
+        }
+        .log-entry.counter-attack {
+            color: #FFA07A; /* Light Salmon for counter-attack */
+        }
+
+        #results-table-container {
+            width: 90%;
+            max-width: 1000px;
+            margin-top: 30px;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        #results-table-container h2 {
+            text-align: center;
+            color: #ff69b4;
+            margin-bottom: 15px;
+        }
+        #results-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #e0e0e0;
+        }
+        #results-table th, #results-table td {
+            border: 1px solid #555;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        #results-table th {
+            background-color: #444;
+            color: #ff8c00; 
+        }
+        #results-table tr:nth-child(even) {
+            background-color: #3a3a3a;
+        }
+        #results-table tr:hover {
+            background-color: #505050;
+        }
+        .results-winner-row td {
+            font-weight: bold;
+            color: #00ff00; 
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>🧠 Brainrot Battle Royale 🤪</h1>
+    <div id="wiki-link-container">
+        <a href="https://en.namu.wiki/w/Italian%20Brainrot/%EB%93%B1%EC%9E%A5%20%EC%BA%90%EB%A6%AD%ED%84%B0" target="_blank" rel="noopener noreferrer">Learn about the Brainrot Characters (Namu.wiki)</a>
+    </div>
+
+    <div id="tournament-status">
+        <div id="current-round">Round: 0</div>
+        <div id="alive-counter">Alive: N/A</div>
+    </div>
+
+    <div id="controls">
+        <button id="nextRoundButton" class="control-button" disabled>Next Round</button>
+        <button id="next5RoundsButton" class="control-button" disabled>Next 5 Rounds</button>
+        <button id="next10RoundsButton" class="control-button" disabled>Next 10 Rounds</button>
+        <button id="finishButton" class="control-button" disabled>Finish Tournament</button>
+        <button id="restartButton" class="control-button">Start/Restart Tournament</button>
+    </div>
+
+    <div id="winner-announcement" style="display: none;"></div>
+
+    <div class="container">
+        <div id="participants-container">
+            <!-- Participants will be rendered here -->
+        </div>
+        <div id="log-container">
+            <p>Welcome to the Brainrot Battle Royale! Click "Start/Restart Tournament" to begin the madness.</p>
+        </div>
+    </div>
+
+    <div id="results-table-container" style="display: none;">
+        <h2>Final Results</h2>
+        <table id="results-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Kills</th>
+                    <th>Deaths</th>
+                    <th>Dmg Dealt</th>
+                    <th>Dmg Recv</th>
+                    <th>Crit Hits</th>
+                    <th>Blocks</th>
+                    <th>Counters</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Results will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let participantNames = [
+            "Tralalero Tralala", "Tung Tung Tung Tung Tung Tung Tung Tung Tung Sahur", "Bombardiro Crocodilo",
+            "Lirilì Larilà", "Boneca Ambalabu", "Brr Brr Patapim", "Chimpanzini Bananini",
+            "Bombombini Gusini", "Capuccino Assassino", "Trippi Troppi", "Frigo Camelo",
+            "La Vaca Saturno Saturnita", "Ballerina Cappucina", "U Din Din Din Din Dun Ma Din Din Din Dun",
+            "Trulimero Trulicina", "Girafa Celestre", "Bobrito Bandito", "Frulli Frulla",
+            "Ta Ta Ta Ta Ta Ta Ta Ta Ta Ta Ta Sahur", "Brri Brri Bicus Dicus Bombicus", "Tric Trac Baraboom",
+            "Cocofanto Elefanto", "Burbaloni Lulilolli", "Orangutini Ananasini",
+            "Garamaraman dan Madudungdung tak tuntung perkuntung", "Il Cacto Hipopotamo",
+            "Blueberrinni Octopussini", "Glorbo Fruttodrillo", "Rhino Toasterino", "Zibra Zubra Zibralini",
+            "Graipussi Medussi", "Tigrrullini Watermellini", "Tracotucotulu Delapeladustuz",
+            "Chimpanzini Capuchini", "Gorillo Watermellondrillo", "Bananita Dolfinita", "Tigroligre Frutonni"
+        ];
+
+        participantNames.sort((a, b) => a.localeCompare(b));
+
+        const allWeapons = [
+            "Banana Peel Launcher", "Pointy Ballet Shoes", "Bandit's Stolen Spoon", "Gooey Bomb Blaster",
+            "Crocodile-Hide Whip", "Tickle Feather Extreme", "Cactus Thorn Blowgun", "Hypno-Harmonica",
+            "Espresso Bean Shooter", "Rubber Ducky Squeaker", "Pineapple Mace", "Fruit Salad Shooter",
+            "Star-Chart Club", "Coconut Catapult", "Medusa-Hair Net", "Hi-Fi Boombox",
+            "Laundry Line Lasso", "Musical Note Shurikens", "Octo-Ink Sprayer", "Pineapple Corer Pike",
+            "Breakfast Cereal Blaster", "Echo Mallet", "Rainbow Paint Gun", "Sahur Drumsticks of Doom",
+            "Confetti Grenade", "Toy Train Derailer", "Spiky Lullaby Lyre", "Unbreakable String Yo-Yo",
+            "Watermelon Rind Shield", "Jungle Vine Snare", "Enchanted Kazoo", "Bubble-Wrap Gauntlets",
+            "Saturnian Ring Toss", "Zebra-Stripe Camo Net", "Patapim Noise Maker", "Sahur Siren Horn", "Dicus Discus of Destiny"
+        ];
+
+        const allAbilities = [
+            "Ambush Hug", "Graceful Pirouette", "Pocket Sand Surprise", "Explosive Cuteness",
+            "Reptilian Roar", "Infectious Giggle", "Prickly Defense Aura", "Lullaby Serenade",
+            "Hyper Speed Dash", "Slippery Escape", "Tropical Cyclone Spin", "Fruity Mirage",
+            "Celestial Blessing", "Elephant Stomp", "Petrifying Stare", "Sonic Disruption Wave",
+            "Confusing Tangle Trap", "Crescendo Blast", "Camouflage Ink Cloud", "Jungle Agility Leap",
+            "Toasted Defense Shield", "Shockwave Clap", "Dizzying Dance", "Dawn Chorus Call",
+            "Glitter Storm Barrage", "Surprise Track Switch", "Sleepy Song", "Perfect Loop Strike",
+            "Seed Spit Volley", "Primal Scream", "Harmonious Shield", "Protective Poof",
+            "Gravitational Pull", "Blinding Pattern Flash", "Startling Squawk", "Rhythmic Confusion", "Shield Ricochet"
+        ];
+
+        let participants = [];
+        const MAX_HP = 100;
+        let gameStarted = false;
+        let isGameOver = false;
+        let roundCounter = 0;
+
+        const CRITICAL_HIT_CHANCE = 0.05; // 5%
+        // Interpreting "Critical hit should deal 50% damage" as 50% OF the normal damage.
+        // So, a critical hit now deals less damage.
+        const CRITICAL_HIT_MULTIPLIER = 0.5; 
+        const COUNTER_ATTACK_CHANCE = 0.10; // 10%
+        // Counter-attack damage will be 25% of a normal damage roll for the counter-attacker
+        const COUNTER_ATTACK_DAMAGE_MULTIPLIER = 0.25;
+        const BLOCK_CHANCE = 0.05; // 5%
+        const ABILITY_PROC_CHANCE = 0.30; // 30% (cosmetic for log)
+
+        const participantsContainer = document.getElementById('participants-container');
+        const logContainer = document.getElementById('log-container');
+        const winnerAnnouncement = document.getElementById('winner-announcement');
+        const aliveCounterDisplay = document.getElementById('alive-counter');
+        const currentRoundDisplay = document.getElementById('current-round');
+        const resultsTableContainer = document.getElementById('results-table-container');
+        const resultsTableBody = document.querySelector('#results-table tbody');
+
+        const nextRoundButton = document.getElementById('nextRoundButton');
+        const next5RoundsButton = document.getElementById('next5RoundsButton');
+        const next10RoundsButton = document.getElementById('next10RoundsButton');
+        const finishButton = document.getElementById('finishButton');
+        const restartButton = document.getElementById('restartButton');
+
+        function updateButtonStates() {
+            const roundControlsDisabled = !gameStarted || isGameOver;
+            nextRoundButton.disabled = roundControlsDisabled;
+            next5RoundsButton.disabled = roundControlsDisabled;
+            next10RoundsButton.disabled = roundControlsDisabled;
+            finishButton.disabled = roundControlsDisabled;
+            restartButton.disabled = false; 
+        }
+
+        function initializeParticipantsData() {
+            participants = participantNames.map((name, index) => ({
+                id: `p-${index}`,
+                name: name,
+                hp: MAX_HP,
+                maxHp: MAX_HP,
+                isAlive: true,
+                weapon: allWeapons[index % allWeapons.length], 
+                ability: allAbilities[index % allAbilities.length],
+                kills: 0,
+                damageDealt: 0,
+                damageReceived: 0,
+                criticalHitsLanded: 0,
+                blocksPerformed: 0,
+                counterAttacksPerformed: 0
+            }));
+            roundCounter = 0;
+        }
+        
+        function resetUIForNewGame() {
+            winnerAnnouncement.style.display = 'none';
+            resultsTableContainer.style.display = 'none';
+            logContainer.innerHTML = ''; 
+            currentRoundDisplay.textContent = `Round: ${roundCounter}`;
+            updateAliveCounter(); 
+            renderParticipants();
+        }
+
+        function renderParticipants() {
+            participantsContainer.innerHTML = '';
+            participants.forEach(p => {
+                const pDiv = document.createElement('div');
+                pDiv.classList.add('participant');
+                pDiv.id = p.id;
+                if (!p.isAlive) {
+                    pDiv.classList.add('eliminated');
+                }
+
+                const nameDiv = document.createElement('div');
+                nameDiv.classList.add('participant-name');
+                nameDiv.textContent = p.name;
+
+                const weaponDiv = document.createElement('div');
+                weaponDiv.classList.add('participant-details');
+                weaponDiv.innerHTML = `<span class="detail-label">Weapon:</span> <span class="weapon-name">${p.weapon}</span>`;
+                
+                const abilityDiv = document.createElement('div');
+                abilityDiv.classList.add('participant-details');
+                abilityDiv.innerHTML = `<span class="detail-label">Ability:</span> <span class="ability-name">${p.ability}</span>`;
+
+                const hpBarContainer = document.createElement('div');
+                hpBarContainer.classList.add('hp-bar-container');
+                
+                const hpBar = document.createElement('div');
+                hpBar.classList.add('hp-bar');
+                const hpPercentage = Math.max(0, (p.hp / p.maxHp) * 100);
+                hpBar.style.width = `${hpPercentage}%`;
+                hpBar.textContent = `${p.hp}/${p.maxHp}`;
+
+                if (hpPercentage <= 25) hpBar.classList.add('critical');
+                else if (hpPercentage <= 50) hpBar.classList.add('low');
+                else {
+                    hpBar.classList.remove('critical', 'low');
+                }
+                
+                hpBarContainer.appendChild(hpBar);
+                pDiv.appendChild(nameDiv);
+                pDiv.appendChild(weaponDiv);
+                pDiv.appendChild(abilityDiv);
+                pDiv.appendChild(hpBarContainer);
+                participantsContainer.appendChild(pDiv);
+            });
+        }
+
+        function addToLog(message, type = "normal") {
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-entry');
+            if (type) logEntry.classList.add(type);
+            logEntry.innerHTML = message; 
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight; 
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function updateAliveCounter() {
+            const aliveCount = participants.filter(p => p.isAlive).length;
+            if (gameStarted) {
+                aliveCounterDisplay.textContent = `Alive: ${aliveCount}/${participants.length}`;
+            } else {
+                aliveCounterDisplay.textContent = `Alive: ${participants.length}/${participants.length}`;
+            }
+        }
+        
+        function startGameProcedure() {
+            gameStarted = true;
+            isGameOver = false;
+            initializeParticipantsData();
+            resetUIForNewGame();
+            addToLog("The BRAINROT BATTLE ROYALE has officially commenced!", "system")
